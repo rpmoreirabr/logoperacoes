@@ -76,7 +76,7 @@ namespace LogOperacoes
 
                 var entry = (EntryData)correlationState;
                 entry.responseContent = reply.ToString();
-                entry.success = this.XPathQuery(entry.responseContent, "//s:Fault").Count > 0;
+                entry.success = this.XPathQuery(entry.responseContent, "//s:Fault").Count <= 0;
                 entry.duration = (entry.entryTime - DateTime.Now).Milliseconds;
                 entry.method = System.Net.Http.HttpMethod.Post;
                 entry.correlationKey = correlationKey;
