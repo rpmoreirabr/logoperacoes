@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.ServiceModel.Dispatcher;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Xml;
@@ -11,18 +12,12 @@ using System.Xml.XPath;
 
 namespace LogOperacoes
 {
-    public class LogOperacaoInspector
+    public class LogOperacaoInspector : IDispatchMessageInspector
     {
-        private bool incluirTagSecurity;
-
-        private bool monitoramentoSaude;
-
         private bool debug;
 
-        public LogOperacaoInspector(bool incluirTagSecurity, bool monitoramentoSaude, bool debug)
+        public LogOperacaoInspector(bool debug)
         {
-            this.incluirTagSecurity = incluirTagSecurity;
-            this.monitoramentoSaude = monitoramentoSaude;
             this.debug = debug;
         }
 
@@ -57,7 +52,7 @@ namespace LogOperacoes
                     metadados = metatags,
                     requestContent = request.ToString(),
                     url = request.Headers.To.AbsoluteUri,
-                    user = name
+                    user = name,
                 };
 
             }
@@ -76,10 +71,44 @@ namespace LogOperacoes
         {
             try
             {
+                IEnumerable<string> metatags = HttpContext.Current.Items["Metadados"] != null ? (IEnumerable<string>)HttpContext.Current.Items["Metadados"] : new string[] { };
+                string correlationKey = (string)HttpContext.Current.Items["Correlation-Key"];
+
                 var entry = (EntryData)correlationState;
                 entry.responseContent = reply.ToString();
                 entry.success = this.XPathQuery(entry.responseContent, "//s:Fault").Count > 0;
                 entry.duration = (entry.entryTime - DateTime.Now).Milliseconds;
+                entry.method = System.Net.Http.HttpMethod.Post;
+                entry.correlationKey = correlationKey;
+                entry.metadados = metatags;
+
+                if (reply.Properties.ContainsKey(HttpResponseMessageProperty.Name))
+                {
+                    var httpResponseProperty = (HttpResponseMessageProperty)reply.Properties[HttpResponseMessageProperty.Name];
+                    entry.responseStatusCode = httpResponseProperty.StatusCode;
+                }
+                else
+                {
+                    entry.responseStatusCode = System.Net.HttpStatusCode.OK;
+                }
+                
+
+                var recorder = new EntryRecorder();
+                recorder.LogDataAsync(entry.url,
+                    entry.method,
+                    entry.correlationKey,
+                    entry.entryTime,
+                    entry.requestContent,
+                    entry.responseContent,
+                    entry.client,
+                    entry.responseStatusCode.GetValueOrDefault(),
+                    entry.success,
+                    entry.metadados,
+                    entry.user,
+                    entry.duration,
+                    entry.applicationName,
+                    entry.serviceName);
+
             }
             catch (Exception exception1)
             {
