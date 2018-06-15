@@ -35,9 +35,11 @@ namespace LogOperacoes
                 var sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
 
+                var requestContent = await request.Content?.ReadAsStringAsync();
+
                 response = await base.SendAsync(request, cancellationToken);
 
-                var requestContent = await request.Content?.ReadAsStringAsync();
+                
                 string responseContent = string.Empty;
                 if (response.Content != null)
                 {
@@ -69,16 +71,4 @@ namespace LogOperacoes
             return response;
         }        
     }
-
-
-
-
-    //.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
-    //{
-    //    AutoRegisterTemplate = true,
-    //    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6,
-    //    IndexFormat = "logoperacoes-{0:yyyy.MM}",
-    //    CustomFormatter = new ElasticsearchJsonFormatter()
-    //})
-    //.CreateLogger();
 }

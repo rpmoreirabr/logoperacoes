@@ -37,8 +37,8 @@ namespace LogOperacoes
             string applicationName = null,
             string serviceName = null)
         {
-            var regexUri = new Regex(@"http[s]?://\w*:?\w*/(?<application>[\w\.]*)/(?<service>[^?]*)\?*(?<query>.*)", RegexOptions.Compiled);
-
+            var regexUri = new Regex(@"http[s]?://(\w*[\.]?)*:?\w*/(?<application>[\w\.]*)/(?<service>[^?]*)\?*(?<query>.*)", RegexOptions.Compiled);
+                                     
             var entry = new EntryData()
             {
                 url = url,
